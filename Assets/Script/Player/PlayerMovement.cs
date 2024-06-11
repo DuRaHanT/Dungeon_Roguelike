@@ -15,6 +15,7 @@ public class PlayerMovement : MonoBehaviour
     {
         map = FindObjectOfType<MapManager>().GetMap();
         playerPosition = PlayerStartPosition();
+        map[playerPosition.x, playerPosition.y] = TileType.Player;
     }
 
     void Update() 
@@ -59,6 +60,17 @@ public class PlayerMovement : MonoBehaviour
                 playerPosition += direction;  // 플레이어 위치 업데이트
                 map[playerPosition.x, playerPosition.y] = TileType.Player;  // 새 위치에 플레이어 배치
                 OnPlayerMoved?.Invoke(playerPosition);
+                transform.position = new Vector3(playerPosition.x, playerPosition.y, 0);
+            }
+
+            else if(map[newPosition.x, newPosition.y] == TileType.Heart)
+            {
+               // 하트가 있는 곳으로 가면 하트가 direction만큼 움직이고 player가 하트가 있던자리로 이동
+            }
+
+            else if(map[newPosition.x, newPosition.y] == TileType.Monster) 
+            {
+                //Battle()
             }
         }
     }

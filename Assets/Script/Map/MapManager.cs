@@ -10,9 +10,9 @@ public class MapManager : MonoBehaviour
     TileType[,] tileTypes= new TileType[5,5]
     {
         { TileType.Wall, TileType.Wall, TileType.Wall, TileType.Wall, TileType.Wall },
-        { TileType.Wall, TileType.Empty, TileType.Monster, TileType.Empty, TileType.Wall },
-        { TileType.Wall, TileType.Heart, TileType.Player, TileType.Goal, TileType.Wall },
-        { TileType.Wall, TileType.Heart, TileType.Empty, TileType.Empty, TileType.Wall },
+        { TileType.Wall, TileType.Empty, TileType.MonsterPosition, TileType.Empty, TileType.Wall },
+        { TileType.Wall, TileType.HeartPosition, TileType.PlayerStart, TileType.Goal, TileType.Wall },
+        { TileType.Wall, TileType.HeartPosition, TileType.Empty, TileType.Empty, TileType.Wall },
         { TileType.Wall, TileType.Wall, TileType.Wall, TileType.Wall, TileType.Wall }
     };
 
@@ -75,5 +75,14 @@ public class MapManager : MonoBehaviour
             else break;
         }
         return count;
+    }
+
+    public TileType GetTileTypeAt(Vector2Int position)
+    {
+        if(position.x >= 0 && position.x < tileTypes.GetLength(0) && position.y >= 0 && position.y < tileTypes.GetLength(1))
+        {
+            return tileTypes[position.x,position.y];
+        }
+        return TileType.Empty;
     }
 }
