@@ -11,24 +11,43 @@ public class PlayerMovement : MonoBehaviour
     public Vector2Int playerPosition;
     [HideInInspector] public TileType[,] map;
 
-    void Start()
-    {
-        map = FindObjectOfType<MapManager>().GetMap();
-        playerPosition = PlayerStartPosition();
-        map[playerPosition.x, playerPosition.y] = TileType.Player;
-    }
+    // void Start()
+    // {
+    //     map = FindObjectOfType<MapManager>().GetMap();
+    //     playerPosition = PlayerStartPosition();
+    //     map[playerPosition.x, playerPosition.y] = TileType.Player;
+    // }
 
     void Update() 
     {
-        int horizontal = (int) Input.GetAxisRaw("Horizontal");
-        int vertical = (int) Input.GetAxisRaw("Vertical");
+        //if (horizontal != 0) 
+        //{
+        //    MovePlayer(new Vector2Int(horizontal, 0));
+        //} 
+        //else if (vertical != 0) 
+        //{
+        //    MovePlayer(new Vector2Int(0, vertical));
+        //}
+        Move();
+    }
 
-        if (horizontal != 0) 
+    void Move()
+    {
+        if (Input.GetKeyDown(KeyCode.RightArrow))
         {
-            MovePlayer(new Vector2Int(horizontal, 0));
-        } else if (vertical != 0) 
+            transform.position = new Vector3(transform.position.x + 1, transform.position.y, transform.position.z);
+        }
+        else if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
-            MovePlayer(new Vector2Int(0, vertical));
+            transform.position = new Vector3(transform.position.x - 1, transform.position.y, transform.position.z);
+        }
+        else if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            transform.position = new Vector3(transform.position.x, transform.position.y + 1, transform.position.z);
+        }
+        else if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            transform.position = new Vector3(transform.position.x, transform.position.y - 1, transform.position.z);
         }
     }
 
