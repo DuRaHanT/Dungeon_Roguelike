@@ -16,16 +16,6 @@ public class MapManager : MonoBehaviour
         { TileType.Wall, TileType.Wall, TileType.Wall, TileType.Wall, TileType.Wall }
     };
 
-    void OnEnable() 
-    {
-        PlayerMovement.OnPlayerMoved += UpdatePlayerHealth;    
-    }
-
-    void OnDisable() 
-    {
-        PlayerMovement.OnPlayerMoved -= UpdatePlayerHealth;
-    }
-
     void Awake() 
     {
         InitializeMap();    
