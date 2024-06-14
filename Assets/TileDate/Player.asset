@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: Player
   m_EditorClassIdentifier: 
   type: 3
-  tileSprite: {fileID: 0}
+  tileSprite: {fileID: -6342241245146142518, guid: d90d7a221c51b3d47a20a1c27617d7c6,
+    type: 3}
   isWalkable: 0
