@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9389e0b12e29454089391b0944d73be, type: 3}
   m_Name: Player
   m_EditorClassIdentifier: 
-  type: 3
+  type: 2
   tileSprite: {fileID: -6342241245146142518, guid: d90d7a221c51b3d47a20a1c27617d7c6,
     type: 3}
-  isWalkable: 0
+  isWalkable: 1
+  isPush: 0
+  Attack: 0
