@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-public interface IDamageable
+public interface IHealth
 {
-    int Health { get; set;}    
-
-    void TakeDamge(int amount);
+    int Health { get; set;}
+       
+    void SetHealth(int health);
 }

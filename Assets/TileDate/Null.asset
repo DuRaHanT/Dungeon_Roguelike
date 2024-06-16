@@ -10,9 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f9389e0b12e29454089391b0944d73be, type: 3}
-  m_Name: Player
+  m_Name: Null
   m_EditorClassIdentifier: 
-  type: 3
-  tileSprite: {fileID: -6342241245146142518, guid: d90d7a221c51b3d47a20a1c27617d7c6,
-    type: 3}
+  type: 0
+  tileSprite: {fileID: 0}
   isWalkable: 0
