@@ -1,82 +1,81 @@
 using UnityEngine;
 
 
-public class MapManager : MonoBehaviour
+namespace DunGeon_Rogelike
 {
-    int minX = -8;
-    int maxX = 8;
-    int minY = -8;
-    int maxY = 8;
-    public TileData[,] tileDataArray;
-
-    private int width;
-    private int height;
-    private int offsetX;
-    private int offsetY;
-
-    private void OnEnable()
+    public class MapManager : MonoBehaviour
     {
-        InitializeMap();
-    }
+        int minX = -8;
+        int maxX = 8;
+        int minY = -8;
+        int maxY = 8;
+        public TileData[,] tileDataArray;
 
-    void InitializeMap()
-    {
-        offsetX = -minX;
-        offsetY = -minY;
-        width = maxX - minX + 1;
-        height = maxY - minY + 1;
+        private int width;
+        private int height;
+        private int offsetX;
+        private int offsetY;
 
-        tileDataArray = new TileData[width, height];
+        public int Height => height;
 
-        TileProperty[] allTiles = FindObjectsOfType<TileProperty>();
-        foreach (var tile in allTiles)
+        private void OnEnable()
         {
-            int x = Mathf.FloorToInt(tile.transform.position.x);
-            int y = Mathf.FloorToInt(tile.transform.position.y);
-            SetTileData(x, y, tile.tileData); // ½ÇÁ¦ ÁÂÇ¥¸¦ ±â¹İÀ¸·Î Å¸ÀÏ µ¥ÀÌÅÍ °´Ã¼ ÀúÀå
+            InitializeMap();
         }
-    }
 
-    public void SetTileData(int x, int y, TileData tileData)
-    {
-        int adjustedX = x + offsetX;
-        int adjustedY = y + offsetY;
-        if (adjustedX >= 0 && adjustedY >= 0 && adjustedX < width && adjustedY < height)
+        void InitializeMap()
         {
-            tileDataArray[adjustedX, adjustedY] = tileData;
-        }
-    }
+            offsetX = -minX;
+            offsetY = -minY;
+            width = maxX - minX + 1;
+            height = maxY - minY + 1;
 
-    public TileData GetTileDataAt(int x, int y)
-    {
-        int adjustedX = x + offsetX;
-        int adjustedY = y + offsetY;
-        if (adjustedX >= 0 && adjustedY >= 0 && adjustedX < width && adjustedY < height)
-        {
-            return tileDataArray[adjustedX, adjustedY];
-        }
-        return null; // ¹üÀ§¸¦ ¹ş¾î³ª¸é null ¹İÈ¯
-    }
+            tileDataArray = new TileData[width, height];
 
-    public void ReSetTileType(int x, int y, TileType newType)
-    {
-        int adjustedX = x + offsetX;
-        int adjustedY = y + offsetY;
-        if (adjustedX >= 0 && adjustedY >= 0 && adjustedX < width && adjustedY < height)
-        {
-            TileData tileData = tileDataArray[adjustedX, adjustedY];
-            if (tileData != null) // ÀÌ¹Ì Å¸ÀÏ µ¥ÀÌÅÍ°¡ ÇÒ´çµÇ¾î ÀÖ´ÂÁö È®ÀÎ
+            TileProperty[] allTiles = FindObjectsOfType<TileProperty>();
+            foreach (var tile in allTiles)
             {
-                tileData.type = newType; // Å¸ÀÏ Å¸ÀÔ º¯°æ
-            }
-            else
-            {
-                // Å¸ÀÏ µ¥ÀÌÅÍ°¡ ¾øÀ¸¸é »õ·Î »ı¼ºÇÏ°Å³ª ´Ù¸¥ Ã³¸®¸¦ ÇÒ ¼ö ÀÖ½À´Ï´Ù.
-                tileData = new TileData(); // »õ·Î¿î TileData ÀÎ½ºÅÏ½º »ı¼º
-                tileData.type = newType;
-                tileDataArray[adjustedX, adjustedY] = tileData; // ¹è¿­¿¡ »õ·Î ÇÒ´ç
+                int x = Mathf.FloorToInt(tile.transform.position.x);
+                int y = Mathf.FloorToInt(tile.transform.position.y);
+                SetTileData(x, y, tile.tileData); 
             }
         }
-    }
 
+        public void SetTileData(int x, int y, TileData tileData)
+        {
+            int adjustedX = x + offsetX;
+            int adjustedY = y + offsetY;
+            if (adjustedX >= 0 && adjustedY >= 0 && adjustedX < width && adjustedY < height)
+            {
+                tileDataArray[adjustedX, adjustedY] = tileData;
+            }
+        }
+
+        public TileData GetTileDataAt(int x, int y)
+        {
+            int adjustedX = x + offsetX;
+            int adjustedY = y + offsetY;
+            if (adjustedX >= 0 && adjustedY >= 0 && adjustedX < width && adjustedY < height)
+            {
+                return tileDataArray[adjustedX, adjustedY];
+            }
+            return null; 
+        }
+
+        public void ReSetTileType(int x, int y, TileType newType)
+        {
+            int adjustedX = x + offsetX;
+            int adjustedY = y + offsetY;
+            if (adjustedX >= 0 && adjustedY >= 0 && adjustedX < width && adjustedY < height)
+            {
+                // ì œê³µëœ tileDataë¥¼ ê¸°ë°˜ìœ¼ë¡œ ìƒˆ TileData ì¸ìŠ¤í„´ìŠ¤ë¥¼ ìƒì„±í•©ë‹ˆë‹¤
+                TileData newTileData = ScriptableObject.CreateInstance<TileData>();
+                newTileData.type = newType;
+
+                // ë°°ì—´ì— ìƒˆ ì¸ìŠ¤í„´ìŠ¤ë¥¼ í• ë‹¹í•©ë‹ˆë‹¤
+                tileDataArray[adjustedX, adjustedY] = newTileData;
+            }
+        }
+
+    }
 }

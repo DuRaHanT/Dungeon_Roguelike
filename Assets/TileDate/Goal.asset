@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9389e0b12e29454089391b0944d73be, type: 3}
   m_Name: Goal
   m_EditorClassIdentifier: 
-  type: 6
+  type: 5
   tileSprite: {fileID: 0}
   isWalkable: 0
+  isPush: 0
+  Attack: 0

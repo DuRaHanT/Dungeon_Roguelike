@@ -4,17 +4,30 @@ using UnityEngine;
 
 namespace DunGeon_Rogelike
 {
-    public class PlayerMovement : MonoBehaviour
+    public class PlayerMovement : MonoBehaviour, IDamageable
     {
+        public int Health {get ; set;}
         List<KeyCode> inputKey = new List<KeyCode>();
         SpriteRenderer playerSpriteRenderer;
         MapManager map;
+        TileProperty tileProperty;
         Dictionary<Vector2, TileProperty> tileObjectMap;
 
-        private void Start()
+        void OnEnable()
+        {
+            Init();
+        }
+
+        void Start()
+        {
+            CheckHeartTile(tileProperty.x, tileProperty.y);
+        }
+
+        void Init()
         {
             map = FindObjectOfType<MapManager>();
             playerSpriteRenderer = GetComponent<SpriteRenderer>();
+            tileProperty = GetComponent<TileProperty>();
             CacheTileObjects();
         }
 
@@ -55,20 +68,30 @@ namespace DunGeon_Rogelike
         {
             int newX = Mathf.RoundToInt(transform.position.x + deltaX);
             int newY = Mathf.RoundToInt(transform.position.y + deltaY);
-            Vector2 newPos = new Vector2(newX, newY);
 
+            var nextTile = map.GetTileDataAt(newX, newY);
+
+            if (nextTile != null && nextTile.type == TileType.Monster)
+            {
+                // ëª¬ìŠ¤í„°ê°€ ìˆëŠ” ê²½ìš°, ë°ë¯¸ì§€ë¥¼ ì…í™ë‹ˆë‹¤.
+                TakeDamage(nextTile.Attack);
+            }
+
+            // íƒ€ì¼ì´ ì´ë™ ê°€ëŠ¥í•œì§€ ì—¬ë¶€ë¥¼ í™•ì¸í•˜ê³  ì´ë™ ì²˜ë¦¬
             if (IsMove(newX, newY))
             {
                 ApplyMovement(direction, addKey, newX, newY);
+                CheckHeartTile(newX, newY);
             }
             else if (CanPush(newX, newY, deltaX, deltaY))
             {
                 PushTile(newX, newY, deltaX, deltaY);
                 ApplyMovement(direction, addKey, newX, newY);
+                CheckHeartTile(newX, newY);
             }
             else
             {
-                Debug.Log($"Blocked at ({newX}, {newY})");
+                Debug.Log($"Blocked at ({newX}, {newY}) {nextTile.type}");
             }
         }
 
@@ -110,7 +133,7 @@ namespace DunGeon_Rogelike
         {
             var nextTile = map.GetTileDataAt(x, y);
             if(nextTile == null) return true;
-            return nextTile.isWalkable;
+            else return nextTile.isWalkable;
         }
 
         bool CanPush(int x, int y, int deltaX, int deltaY)
@@ -120,14 +143,13 @@ namespace DunGeon_Rogelike
             {
                 int pushToX = x + deltaX;
                 int pushToY = y + deltaY;
-                return IsMove(pushToX, pushToY); // ¹Ğ·Á³¯ Å¸ÀÏÀÌ ÀÌµ¿ °¡´ÉÇÑÁö °Ë»ç
+                return IsMove(pushToX, pushToY);
             }
             return false;
         }
 
         void PushTile(int x, int y, int deltaX, int deltaY)
         {
-            // ¹Ğ·Á³¯ Å¸ÀÏÀÇ µ¥ÀÌÅÍ °¡Á®¿À±â
             var pushedTile = map.GetTileDataAt(x, y);
             Vector2 oldPos = new Vector2(x, y);
             Vector2 newPos = new Vector2(x + deltaX, y + deltaY);
@@ -140,9 +162,50 @@ namespace DunGeon_Rogelike
                 tileObj.transform.position = new Vector3(x + deltaX, y + deltaY, 0);
             }
 
-            // Å¸ÀÏ Å¸ÀÔ ¹è¿­ ¾÷µ¥ÀÌÆ®
             map.SetTileData(x + deltaX, y + deltaY, pushedTile);
-            map.ReSetTileType(x, y, TileType.Empty); // ¿ø·¡ À§Ä¡´Â ºñ¿öÁÜ
+            map.ReSetTileType(x, y, TileType.Empty); 
+        }
+
+        void CheckHeartTile(int x, int startY)
+        {
+            int maxY = map.Height;
+            for(int y = startY +1; y <= maxY; y++)
+            {
+                TileData tileData = map.GetTileDataAt(x, y);
+
+                if (tileData == null || tileData.type != TileType.Heart)
+                {
+                    // tileDataê°€ nullì´ê±°ë‚˜ Heart íƒ€ì…ì´ ì•„ë‹Œ ê²½ìš° Game Over ì¶œë ¥  
+                    Debug.Log("Game Over");
+                    break;
+                }
+                else
+                {
+                    // tileDataì˜ íƒ€ì…ì´ Heartì¼ ê²½ìš°
+                    SetHealth(x,y);
+                    Debug.Log($"Hp is {Health}");
+                    break;
+                }
+            }
+        }
+
+        public void TakeDamage(int amount)
+        {
+            Health -= amount;
+            if(Health <= 0)
+            {
+                Debug.Log("Game Oveer");
+            }
+            else
+            {
+                Debug.Log($"Player took {amount} damage, remaining health: {Health}");
+            }
+        }
+
+        public void SetHealth(int x, int y)
+        {
+            TileData tileData = map.GetTileDataAt(x, y);
+            Health = tileData.health;
         }
     }
 }
