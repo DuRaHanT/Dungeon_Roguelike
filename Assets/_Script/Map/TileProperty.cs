@@ -41,6 +41,8 @@ namespace DunGeon_Rogelike
                     break;
                 case TileType.Heart : this.AddComponent<HeartManager>();
                     break;
+                case TileType.Monster : this.AddComponent<MonsterManager>();
+                    break;
                 default : break;
             };
         }

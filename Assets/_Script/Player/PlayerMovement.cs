@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace DunGeon_Rogelike
@@ -7,6 +8,7 @@ namespace DunGeon_Rogelike
     public class PlayerMovement : MonoBehaviour, IDamageable
     {
         public int Health {get ; set;}
+        public int Attack {get ; set;}
         List<KeyCode> inputKey = new List<KeyCode>();
         SpriteRenderer playerSpriteRenderer;
         MapManager map;
@@ -29,6 +31,7 @@ namespace DunGeon_Rogelike
             playerSpriteRenderer = GetComponent<SpriteRenderer>();
             tileProperty = GetComponent<TileProperty>();
             CacheTileObjects();
+            Attack = 1;
         }
 
         private void CacheTileObjects()
@@ -71,11 +74,19 @@ namespace DunGeon_Rogelike
 
             var nextTile = map.GetTileDataAt(newX, newY);
 
-            if (nextTile != null && nextTile.type == TileType.Monster)
+            TileProperty monsterObject = GetTileObjectAt(newX, newY);
+
+            if (monsterObject != null)
             {
-                // 몬스터가 있는 경우, 데미지를 입힙니다.
-                TakeDamage(nextTile.Attack);
+                MonsterManager monsterManager = monsterObject.GetComponent<MonsterManager>();
+                if (monsterManager != null && nextTile.type == TileType.Monster)
+                {
+                    // 몬스터가 있는 경우, 플레이어와 몬스터 모두에게 데미지를 입힘
+                    TakeDamage(nextTile.Attack);
+                    monsterManager.TakeDamage(Attack);
+                }
             }
+
 
             // 타일이 이동 가능한지 여부를 확인하고 이동 처리
             if (IsMove(newX, newY))
@@ -183,7 +194,7 @@ namespace DunGeon_Rogelike
                 {
                     // tileData의 타입이 Heart일 경우
                     SetHealth(x,y);
-                    Debug.Log($"Hp is {Health}");
+                    Debug.Log($"Player Hp is {Health}");
                     break;
                 }
             }
@@ -207,5 +218,16 @@ namespace DunGeon_Rogelike
             TileData tileData = map.GetTileDataAt(x, y);
             Health = tileData.health;
         }
+
+        public TileProperty GetTileObjectAt(int x, int y)
+        {
+            Vector2 position = new Vector2(x, y);
+            if (tileObjectMap.TryGetValue(position, out TileProperty tileObject))
+            {
+                return tileObject;
+            }
+            return null;
+        }
+
     }
 }
