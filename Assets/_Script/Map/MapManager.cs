@@ -1,6 +1,4 @@
-using Unity.VisualScripting;
 using UnityEngine;
-
 
 namespace DunGeon_Rogelike
 {
@@ -17,6 +15,8 @@ namespace DunGeon_Rogelike
         private int offsetX;
         private int offsetY;
 
+        Camera camera;
+
         public int Height => height;
 
         private void OnEnable()
@@ -30,6 +30,8 @@ namespace DunGeon_Rogelike
             offsetY = -minY;
             width = maxX - minX + 1;
             height = maxY - minY + 1;
+
+            camera = Camera.main;
 
             tileDataArray = new TileData[width, height];
 

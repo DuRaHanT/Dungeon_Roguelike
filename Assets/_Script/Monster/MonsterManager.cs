@@ -8,6 +8,7 @@ namespace DunGeon_Rogelike
     {
         public int Health { get; set; }
         public int Attack { get; set; }
+        public int Armor {get ; set;}
         TileProperty tileProperty;
         MapManager map;
 

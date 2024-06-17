@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "Rogue.sln"
+    "dotnet.defaultSolution": "Dungeon_Roguelike.sln"
 }

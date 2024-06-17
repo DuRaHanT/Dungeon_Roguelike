@@ -9,10 +9,13 @@ namespace DunGeon_Rogelike
     {
         public int Health {get ; set;}
         public int Attack {get ; set;}
+        public int Armor {get ; set;}
         List<KeyCode> inputKey = new List<KeyCode>();
+        List<PlayerAction> actions = new List<PlayerAction>();
         SpriteRenderer playerSpriteRenderer;
         MapManager map;
         TileProperty tileProperty;
+        PlayerState playerState;
         Dictionary<Vector2, TileProperty> tileObjectMap;
 
         void OnEnable()
@@ -27,11 +30,12 @@ namespace DunGeon_Rogelike
 
         void Init()
         {
+            playerState = GetComponent<PlayerState>();
             map = FindObjectOfType<MapManager>();
             playerSpriteRenderer = GetComponent<SpriteRenderer>();
             tileProperty = GetComponent<TileProperty>();
             CacheTileObjects();
-            Attack = 1;
+            Attack = playerState.attack;
         }
 
         private void CacheTileObjects()
@@ -116,10 +120,37 @@ namespace DunGeon_Rogelike
 
         void BackMove()
         {
-            if (inputKey.Count <= 0) return;
-            KeyCode lastKey = inputKey[^1]; // Using C# 8.0 syntax for last element
-            inputKey.RemoveAt(inputKey.Count - 1);
-            ReactToKey(lastKey);
+            if (actions.Count > 0)
+            {
+                PlayerAction lastAction = actions[^1]; // 마지막 행동 가져오기
+                actions.RemoveAt(actions.Count - 1); // 마지막 행동 삭제
+                
+                // 위치 변경 되돌리기
+                transform.position -= lastAction.PositionChange;
+                
+                // 푸시된 타일 되돌리기
+                if (lastAction.IsPush)
+                {
+                    TileProperty pushedTile = GetTileObjectAt((int)lastAction.PositionAffected.x, (int)lastAction.PositionAffected.y);
+                    pushedTile.transform.position -= new Vector3(lastAction.PositionChange.x, lastAction.PositionChange.y, 0);
+                }
+
+                // 받은 데미지 회복
+                Health += lastAction.DamageTaken;
+
+                // 가한 데미지 회복 (몬스터의 체력 복구)
+                if (lastAction.IsAttack)
+                {
+                    TileProperty monsterTile = GetTileObjectAt((int)lastAction.PositionAffected.x, (int)lastAction.PositionAffected.y);
+                    MonsterManager monsterManager = monsterTile.GetComponent<MonsterManager>();
+                    if (monsterManager != null)
+                    {
+                        monsterManager.TakeDamage(-lastAction.DamageDealt); // 음수 값을 주어 체력을 회복시킴
+                    }
+                }
+
+                Debug.Log("Action reversed");
+            }
         }
 
         void ReactToKey(KeyCode key)
@@ -229,5 +260,17 @@ namespace DunGeon_Rogelike
             return null;
         }
 
+        // void LogAction(Vector3 positionChange, bool isPush, bool isAttack, int damageDealt, int damageTaken, TileType tileType, Vector2 positionAffected)
+        // {
+        //     actions.Add(new PlayerAction {
+        //         PositionChange = positionChange,
+        //         IsPush = isPush,
+        //         IsAttack = isAttack,
+        //         DamageDealt = damageDealt,
+        //         DamageTaken = damageTaken,
+        //         TileTypeAffected = tileType,
+        //         PositionAffected = positionAffected
+        //     });
+        // }
     }
 }
