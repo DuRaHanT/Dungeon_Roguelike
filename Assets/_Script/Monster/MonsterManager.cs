@@ -34,7 +34,7 @@ namespace DunGeon_Rogelike
             Health -= amount;
             if(Health <= 0)
             {
-                Destroy(this.gameObject);
+                this.gameObject.SetActive(false);
             }
             else
             {
@@ -51,7 +51,7 @@ namespace DunGeon_Rogelike
 
                 if (tileData == null || tileData.type != TileType.Heart)
                 {
-                    Destroy(this.gameObject);
+                    this.gameObject.SetActive(false);
                     break;
                 }
                 else

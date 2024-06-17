@@ -1,41 +1,45 @@
 using System;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace DunGeon_Rogelike
 {
     public class PlayerMovement : MonoBehaviour, IDamageable
     {
-        public int Health {get ; set;}
-        public int Attack {get ; set;}
-        public int Armor {get ; set;}
+        public int Health { get; set; }
+        public int Attack { get; set; }
+        public int Armor { get; set; }
+
         List<KeyCode> inputKey = new List<KeyCode>();
         List<PlayerAction> actions = new List<PlayerAction>();
         SpriteRenderer playerSpriteRenderer;
         MapManager map;
-        TileProperty tileProperty;
-        PlayerState playerState;
         Dictionary<Vector2, TileProperty> tileObjectMap;
+        TileProperty tileProperty;
 
         void OnEnable()
         {
-            Init();
+            Initialize();
         }
 
         void Start()
         {
+            Attack = GetComponent<PlayerState>().attack;
             CheckHeartTile(tileProperty.x, tileProperty.y);
         }
 
-        void Init()
+        void Initialize()
         {
-            playerState = GetComponent<PlayerState>();
             map = FindObjectOfType<MapManager>();
             playerSpriteRenderer = GetComponent<SpriteRenderer>();
             tileProperty = GetComponent<TileProperty>();
             CacheTileObjects();
-            Attack = playerState.attack;
+        }
+
+        void Update()
+        {
+            HandleInput();
+            if (Input.GetKeyDown(KeyCode.Z)) UndoLastAction();
         }
 
         private void CacheTileObjects()
@@ -48,134 +52,58 @@ namespace DunGeon_Rogelike
             }
         }
 
-        void Update()
-        {
-            HandleInput();
-            if (Input.GetKeyDown(KeyCode.Z)) BackMove();
-        }
 
         void HandleInput()
         {
             Vector3[] directions = { Vector3.right, Vector3.left, Vector3.up, Vector3.down };
             KeyCode[] keys = { KeyCode.RightArrow, KeyCode.LeftArrow, KeyCode.UpArrow, KeyCode.DownArrow };
-            KeyCode[] reverseKeys = { KeyCode.LeftArrow, KeyCode.RightArrow, KeyCode.DownArrow, KeyCode.UpArrow };
-            int[,] deltas = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
-
             for (int i = 0; i < directions.Length; i++)
             {
                 if (Input.GetKeyDown(keys[i]))
                 {
-                    MoveDirection(directions[i], reverseKeys[i], deltas[i, 0], deltas[i, 1]);
-                    break; // Only handle one key per frame to avoid conflicts
+                    ProcessMove(directions[i], keys[(i + 2) % 4], new Vector2Int((int)directions[i].x, (int)directions[i].y));
+                    break;
                 }
             }
         }
 
-        void MoveDirection(Vector3 direction, KeyCode addKey, int deltaX, int deltaY)
+        void ProcessMove(Vector3 direction, KeyCode reverseKey, Vector2Int delta)
         {
-            int newX = Mathf.RoundToInt(transform.position.x + deltaX);
-            int newY = Mathf.RoundToInt(transform.position.y + deltaY);
+            Vector2Int newPosition = Vector2Int.RoundToInt(transform.position) + delta;
+            var nextTile = map.GetTileDataAt(newPosition.x, newPosition.y);
+            TileProperty tileProperty = GetTileObjectAt(newPosition.x, newPosition.y);
 
-            var nextTile = map.GetTileDataAt(newX, newY);
-
-            TileProperty monsterObject = GetTileObjectAt(newX, newY);
-
-            if (monsterObject != null)
+            if (tileProperty && nextTile.type == TileType.Monster)
             {
-                MonsterManager monsterManager = monsterObject.GetComponent<MonsterManager>();
-                if (monsterManager != null && nextTile.type == TileType.Monster)
-                {
-                    // 몬스터가 있는 경우, 플레이어와 몬스터 모두에게 데미지를 입힘
-                    TakeDamage(nextTile.Attack);
-                    monsterManager.TakeDamage(Attack);
-                }
+                MonsterManager monsterManager = tileProperty.GetComponent<MonsterManager>();
+                HandleCombat(monsterManager, nextTile.Attack);
+                LogAction(Vector3.zero, false, true, Attack, nextTile.Attack, nextTile.type, newPosition);
             }
 
+            if (IsTileWalkable(newPosition.x, newPosition.y))
+            {
+                ApplyMovement(direction, reverseKey);
+                LogAction(direction, false, false, 0, 0, TileType.Empty, newPosition);
+            }
 
-            // 타일이 이동 가능한지 여부를 확인하고 이동 처리
-            if (IsMove(newX, newY))
+            else if (CanPush(newPosition.x, newPosition.y, (int)direction.x, (int)direction.y))
             {
-                ApplyMovement(direction, addKey, newX, newY);
-                CheckHeartTile(newX, newY);
+                PushTile(newPosition.x, newPosition.y, (int)direction.x, (int)direction.y);
+                ApplyMovement(direction, reverseKey);
+                LogAction(direction, true, false, 0, 0, nextTile.type, newPosition);
             }
-            else if (CanPush(newX, newY, deltaX, deltaY))
-            {
-                PushTile(newX, newY, deltaX, deltaY);
-                ApplyMovement(direction, addKey, newX, newY);
-                CheckHeartTile(newX, newY);
-            }
+            
             else
             {
-                Debug.Log($"Blocked at ({newX}, {newY}) {nextTile.type}");
+                Debug.Log($"Blocked at ({newPosition.x}, {newPosition.y}) {nextTile.type}");
             }
         }
 
-        void ApplyMovement(Vector3 direction, KeyCode addKey, int x, int y)
+        void ApplyMovement(Vector3 direction, KeyCode addKey)
         {
             transform.position += direction;
             inputKey.Add(addKey);
             playerSpriteRenderer.flipX = direction == Vector3.left;
-            Debug.Log($"Moved to ({x}, {y})");
-        }
-
-        void BackMove()
-        {
-            if (actions.Count > 0)
-            {
-                PlayerAction lastAction = actions[^1]; // 마지막 행동 가져오기
-                actions.RemoveAt(actions.Count - 1); // 마지막 행동 삭제
-                
-                // 위치 변경 되돌리기
-                transform.position -= lastAction.PositionChange;
-                
-                // 푸시된 타일 되돌리기
-                if (lastAction.IsPush)
-                {
-                    TileProperty pushedTile = GetTileObjectAt((int)lastAction.PositionAffected.x, (int)lastAction.PositionAffected.y);
-                    pushedTile.transform.position -= new Vector3(lastAction.PositionChange.x, lastAction.PositionChange.y, 0);
-                }
-
-                // 받은 데미지 회복
-                Health += lastAction.DamageTaken;
-
-                // 가한 데미지 회복 (몬스터의 체력 복구)
-                if (lastAction.IsAttack)
-                {
-                    TileProperty monsterTile = GetTileObjectAt((int)lastAction.PositionAffected.x, (int)lastAction.PositionAffected.y);
-                    MonsterManager monsterManager = monsterTile.GetComponent<MonsterManager>();
-                    if (monsterManager != null)
-                    {
-                        monsterManager.TakeDamage(-lastAction.DamageDealt); // 음수 값을 주어 체력을 회복시킴
-                    }
-                }
-
-                Debug.Log("Action reversed");
-            }
-        }
-
-        void ReactToKey(KeyCode key)
-        {
-            Vector3 moveVector = key switch
-            {
-                KeyCode.RightArrow => Vector3.right,
-                KeyCode.LeftArrow => Vector3.left,
-                KeyCode.UpArrow => Vector3.up,
-                KeyCode.DownArrow => Vector3.down,
-                _ => Vector3.zero
-            };
-
-            if (moveVector != Vector3.zero)
-            {
-                transform.position += moveVector;
-                playerSpriteRenderer.flipX = key == KeyCode.LeftArrow;
-            }
-        }
-
-        bool IsMove(int x, int y)
-        {
-            var nextTile = map.GetTileDataAt(x, y);
-            if(nextTile == null) return true;
-            else return nextTile.isWalkable;
         }
 
         bool CanPush(int x, int y, int deltaX, int deltaY)
@@ -185,7 +113,7 @@ namespace DunGeon_Rogelike
             {
                 int pushToX = x + deltaX;
                 int pushToY = y + deltaY;
-                return IsMove(pushToX, pushToY);
+                return IsTileWalkable(pushToX, pushToY);
             }
             return false;
         }
@@ -208,69 +136,101 @@ namespace DunGeon_Rogelike
             map.ReSetTileType(x, y, TileType.Empty); 
         }
 
-        void CheckHeartTile(int x, int startY)
+        void UndoLastAction()
         {
-            int maxY = map.Height;
-            for(int y = startY +1; y <= maxY; y++)
-            {
-                TileData tileData = map.GetTileDataAt(x, y);
+            if (actions.Count == 0) return;
+            var lastAction = actions[^1];
+            actions.RemoveAt(actions.Count - 1);
 
-                if (tileData == null || tileData.type != TileType.Heart)
-                {
-                    // tileData가 null이거나 Heart 타입이 아닌 경우 Game Over 출력  
-                    Debug.Log("Game Over");
-                    break;
-                }
-                else
-                {
-                    // tileData의 타입이 Heart일 경우
-                    SetHealth(x,y);
-                    Debug.Log($"Player Hp is {Health}");
-                    break;
-                }
+            transform.position -= lastAction.PositionChange;
+            UndoTilePush(lastAction);
+            RecoverDamage(lastAction);
+
+            Debug.Log("Action reversed");
+        }
+
+        void UndoTilePush(PlayerAction lastAction)
+        {
+            if (!lastAction.IsPush) return;
+            TileProperty tile = GetTileObjectAt((int)lastAction.PositionAffected.x, (int)lastAction.PositionAffected.y);
+            if (tile)
+            {
+                tile.transform.position -= lastAction.PositionChange;
             }
         }
 
-        public void TakeDamage(int amount)
+        void RecoverDamage(PlayerAction lastAction)
         {
-            Health -= amount;
-            if(Health <= 0)
+            Health += lastAction.DamageTaken;
+            if (lastAction.IsAttack)
             {
-                Debug.Log("Game Oveer");
+                TileProperty monsterTile = GetTileObjectAt((int)lastAction.PositionAffected.x, (int)lastAction.PositionAffected.y);
+                MonsterManager monsterManager = monsterTile?.GetComponent<MonsterManager>();
+                monsterManager?.TakeDamage(-lastAction.DamageDealt);
             }
+        }
+
+        public void TakeDamage(int damage)
+        {
+            Health -= damage;
+            if (Health <= 0)
+                Debug.Log("Game Over");
             else
-            {
-                Debug.Log($"Player took {amount} damage, remaining health: {Health}");
-            }
+                Debug.Log($"Player took {damage} damage, remaining health: {Health}");
         }
 
-        public void SetHealth(int x, int y)
+        bool IsTileWalkable(int x, int y)
         {
-            TileData tileData = map.GetTileDataAt(x, y);
-            Health = tileData.health;
+            var tile = map.GetTileDataAt(x, y);
+            return tile == null || tile.isWalkable;
         }
 
-        public TileProperty GetTileObjectAt(int x, int y)
+        TileProperty GetTileObjectAt(int x, int y)
         {
-            Vector2 position = new Vector2(x, y);
-            if (tileObjectMap.TryGetValue(position, out TileProperty tileObject))
-            {
-                return tileObject;
-            }
+            if (tileObjectMap.TryGetValue(new Vector2(x, y), out TileProperty tile))
+                return tile;
             return null;
         }
 
-        // void LogAction(Vector3 positionChange, bool isPush, bool isAttack, int damageDealt, int damageTaken, TileType tileType, Vector2 positionAffected)
-        // {
-        //     actions.Add(new PlayerAction {
-        //         PositionChange = positionChange,
-        //         IsPush = isPush,
-        //         IsAttack = isAttack,
-        //         DamageDealt = damageDealt,
-        //         DamageTaken = damageTaken,
-        //         TileTypeAffected = tileType,
-        //         PositionAffected = positionAffected
-        //     });
-        // }
+        void HandleCombat(MonsterManager monsterManager, int monsterAttack)
+        {
+            if (!monsterManager) return;
+            TakeDamage(monsterAttack);
+            monsterManager.TakeDamage(Attack);
+        }
+
+        void CheckHeartTile(int x, int startY)
+        {
+            int maxY = map.Height;
+            for (int y = startY + 1; y <= maxY; y++)
+            {
+                TileData tileData = map.GetTileDataAt(x, y);
+                if (tileData?.type == TileType.Heart)
+                {
+                    SetHealth(tileData.health);
+                    Debug.Log($"Player Hp is {Health}");
+                    return;
+                }
+            }
+            Debug.Log("No Heart Tile found above the player");
+        }
+
+        public void SetHealth(int newHealth)
+        {
+            Health = newHealth;
+        }
+
+        void LogAction(Vector3 positionChange, bool isPush, bool isAttack, int damageDealt, int damageTaken, TileType tileType, Vector2Int positionAffected)
+        {
+            actions.Add(new PlayerAction {
+                PositionChange = positionChange,
+                IsPush = isPush,
+                IsAttack = isAttack,
+                DamageDealt = damageDealt,
+                DamageTaken = damageTaken,
+                TileTypeAffected = tileType,
+                PositionAffected = positionAffected
+            });
+        }
     }
 }
