@@ -38,14 +38,14 @@ namespace DunGeon_Rogelike
             switch(type)
             {
                 case TileType.Player : 
-                    this.AddComponent<PlayerMovement>();
                     this.AddComponent<PlayerState>();
+                    this.AddComponent<PlayerMovement>();
                     break;
                 case TileType.Heart : this.AddComponent<HeartManager>();
                     break;
                 case TileType.Monster : 
-                    this.AddComponent<MonsterManager>();
                     this.AddComponent<MonsterState>();
+                    this.AddComponent<MonsterManager>();
                     break;
                 default : break;
             };

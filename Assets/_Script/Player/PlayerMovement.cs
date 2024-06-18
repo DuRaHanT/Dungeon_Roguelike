@@ -77,20 +77,20 @@ namespace DunGeon_Rogelike
             {
                 MonsterManager monsterManager = tileProperty.GetComponent<MonsterManager>();
                 HandleCombat(monsterManager, nextTile.Attack);
-                LogAction(Vector3.zero, false, true, Attack, nextTile.Attack, nextTile.type, newPosition);
+                LogAction(Vector3.zero, false, true, Attack, nextTile.Attack, nextTile.type, newPosition, true);
             }
 
             if (IsTileWalkable(newPosition.x, newPosition.y))
             {
                 ApplyMovement(direction, reverseKey);
-                LogAction(direction, false, false, 0, 0, TileType.Empty, newPosition);
+                LogAction(direction, false, false, 0, 0, TileType.Empty, newPosition, false);
             }
 
             else if (CanPush(newPosition.x, newPosition.y, (int)direction.x, (int)direction.y))
             {
                 PushTile(newPosition.x, newPosition.y, (int)direction.x, (int)direction.y);
                 ApplyMovement(direction, reverseKey);
-                LogAction(direction, true, false, 0, 0, nextTile.type, newPosition);
+                LogAction(direction, true, false, 0, 0, nextTile.type, newPosition, false);
             }
             
             else
@@ -136,12 +136,13 @@ namespace DunGeon_Rogelike
             map.ReSetTileType(x, y, TileType.Empty); 
         }
 
-        void UndoLastAction()
+        void UndoLastAction() 
         {
             if (actions.Count == 0) return;
             var lastAction = actions[^1];
             actions.RemoveAt(actions.Count - 1);
 
+            // 위치 변경과 데미지 복원
             transform.position -= lastAction.PositionChange;
             UndoTilePush(lastAction);
             RecoverDamage(lastAction);
@@ -166,7 +167,17 @@ namespace DunGeon_Rogelike
             {
                 TileProperty monsterTile = GetTileObjectAt((int)lastAction.PositionAffected.x, (int)lastAction.PositionAffected.y);
                 MonsterManager monsterManager = monsterTile?.GetComponent<MonsterManager>();
-                monsterManager?.TakeDamage(-lastAction.DamageDealt);
+                
+                if (monsterManager != null)
+                {
+                    monsterManager.TakeDamage(-lastAction.DamageDealt);  // 몬스터의 체력을 복원
+                    if (lastAction.MonsterDied)
+                    {
+                        // 몬스터가 사망했었다면 상태를 되살립니다.
+                        monsterManager.GetComponent<SpriteRenderer>().enabled = true;
+                        monsterManager.Health += lastAction.DamageDealt;  // 복원할 때 사전에 저장된 체력으로 설정
+                    }
+                }
             }
         }
 
@@ -220,7 +231,18 @@ namespace DunGeon_Rogelike
             Health = newHealth;
         }
 
-        void LogAction(Vector3 positionChange, bool isPush, bool isAttack, int damageDealt, int damageTaken, TileType tileType, Vector2Int positionAffected)
+        MonsterManager GetMonsterAt(Vector2 position) 
+        {
+            // 특정 위치에서 몬스터 컴포넌트를 찾아 반환
+            foreach (var tile in tileObjectMap) {
+                if (tile.Key == position) {
+                    return tile.Value.GetComponent<MonsterManager>();
+                }
+            }
+            return null;
+        }
+
+        void LogAction(Vector3 positionChange, bool isPush, bool isAttack, int damageDealt, int damageTaken, TileType tileType, Vector2Int positionAffected, bool monsterDied)
         {
             actions.Add(new PlayerAction {
                 PositionChange = positionChange,
@@ -229,7 +251,8 @@ namespace DunGeon_Rogelike
                 DamageDealt = damageDealt,
                 DamageTaken = damageTaken,
                 TileTypeAffected = tileType,
-                PositionAffected = positionAffected
+                PositionAffected = positionAffected,
+                MonsterDied = monsterDied
             });
         }
     }

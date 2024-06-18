@@ -14,5 +14,6 @@ namespace DunGeon_Rogelike
         public int DamageTaken { get; set; }
         public TileType TileTypeAffected { get; set; }
         public Vector2 PositionAffected { get; set; }         
+        public bool MonsterDied { get; set; }
     }
 }

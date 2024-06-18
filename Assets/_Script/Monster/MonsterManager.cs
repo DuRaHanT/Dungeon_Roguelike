@@ -11,6 +11,7 @@ namespace DunGeon_Rogelike
         public int Armor {get ; set;}
         TileProperty tileProperty;
         MapManager map;
+        MonsterState monsterState;
 
         void OnEnable()
         {
@@ -21,12 +22,15 @@ namespace DunGeon_Rogelike
         {
             map = FindObjectOfType<MapManager>();
             tileProperty = GetComponent<TileProperty>();
+            monsterState = GetComponent<MonsterState>();
             Attack = 1;
         }
 
         void Start()
         {
             CheckHeartTile(tileProperty.x, tileProperty.y);
+            monsterState.Health = Health;
+            monsterState.Position = new Vector2(tileProperty.x , tileProperty.y);
         }
 
         public void TakeDamage(int amount)
@@ -34,7 +38,9 @@ namespace DunGeon_Rogelike
             Health -= amount;
             if(Health <= 0)
             {
-                this.gameObject.SetActive(false);
+                monsterState.isDead = true;
+                this.GetComponent<SpriteRenderer>().enabled = !monsterState.isDead;
+                tileProperty.tileData.isWalkable = true;
             }
             else
             {
@@ -51,7 +57,9 @@ namespace DunGeon_Rogelike
 
                 if (tileData == null || tileData.type != TileType.Heart)
                 {
-                    this.gameObject.SetActive(false);
+                    monsterState.isDead = true;
+                    this.GetComponent<SpriteRenderer>().enabled = !monsterState.isDead;
+                    tileData.isWalkable = true;
                     break;
                 }
                 else
