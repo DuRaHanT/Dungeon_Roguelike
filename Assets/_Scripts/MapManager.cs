@@ -1,10 +1,14 @@
 using Unity.VisualScripting;
 using UnityEngine;
+using System;
+using Random = UnityEngine.Random;
 
 namespace Rog_Card
 {
     public class MapManager : MonoBehaviour
     {
+        public event EventHandler<PlayerMoveEventArgs> OnPlayerMovementEvent;
+
         public GameObject playerPrefab;
         public GameObject mapParent;
         public TileProperty[,] tileProperties;
@@ -17,6 +21,11 @@ namespace Rog_Card
             Init();
         }
 
+        void OnDestroy()
+        {
+            OnPlayerMovementEvent -= PlayerMoveMent;
+        }
+
         void Init()
         {
             tileProperties = new TileProperty[height,width];
@@ -27,6 +36,8 @@ namespace Rog_Card
             {
                 SetTileDataAt(tile);
             }
+
+            OnPlayerMovementEvent += PlayerMoveMent;
         }
 
         void Start()
@@ -58,12 +69,26 @@ namespace Rog_Card
 
             activityPlayer.transform.SetParent(mapParent.transform, false);
 
-            PlayerMoveMent(Random.Range(0,height), 0);
+            OnPlayerMove(Random.Range(0,height), 0);
         }
 
-        public void PlayerMoveMent(int x, int y)
+        public void OnPlayerMove(int x, int y)
         {
+            Debug.Log("Run Event");
+            OnPlayerMovementEvent?.Invoke(this, new PlayerMoveEventArgs(x, y));
+        }
+
+        void PlayerMoveMent(object sender, PlayerMoveEventArgs e)
+        {
+            int x = Mathf.Clamp(e.X, 0, height);
+            int y = Mathf.Clamp(e.Y, 0, width);
+
             activityPlayer.transform.localPosition = GetTileDataAt(x,y).transform.localPosition;
+
+            var state = activityPlayer.GetComponent<PlayerState>();
+
+            state.currentX = x;
+            state.currentY = y;
 
             Debug.Log($"player position is {activityPlayer.transform.localPosition}");
 
@@ -82,4 +107,18 @@ namespace Rog_Card
             return new Vector2Int(x, y);
         }
     }
+
+    #region Event
+    public class PlayerMoveEventArgs : EventArgs
+    {
+        public int X { get; }
+        public int Y { get; }
+
+        public PlayerMoveEventArgs(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
+    }
+    #endregion
 }

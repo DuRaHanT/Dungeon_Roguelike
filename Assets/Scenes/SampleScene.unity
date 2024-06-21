@@ -2088,7 +2088,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b59a36f94440524459fad799c92ab089, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player: {fileID: 3722805820995294984, guid: d9125d9eaa9779d4a980d50434261dc1, type: 3}
+  playerPrefab: {fileID: 3722805820995294984, guid: d9125d9eaa9779d4a980d50434261dc1,
+    type: 3}
   mapParent: {fileID: 1917360378}
 --- !u!4 &1846168684
 Transform:
