@@ -15,7 +15,7 @@ namespace Rog_Card
 
         void Start ()
         {
-            this.transform.position = mapManager.tiles[0].transform.position;
+            
         }
 
         void Update()
