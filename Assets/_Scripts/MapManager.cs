@@ -1,16 +1,16 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
-
 
 namespace Rog_Card
 {
     public class MapManager : MonoBehaviour
     {
-        public GameObject player;
-        public TileType[,] tileTypes;
-        List<TileProperty> tileProperties;
+        public GameObject playerPrefab;
+        public GameObject mapParent;
+        public TileProperty[,] tileProperties;
+        GameObject activityPlayer;
+
+        int width = 5, height = 4;
 
         void OnEnable()
         {
@@ -19,45 +19,55 @@ namespace Rog_Card
 
         void Init()
         {
-            tileProperties = new List<TileProperty>();
-
+            tileProperties = new TileProperty[height,width];
+            
             TileProperty[] tiles = FindObjectsOfType<TileProperty>();
 
             foreach(var tile in tiles)
             {
-                tileProperties.Add(tile);
-            }
-
-            tileTypes = new TileType[4,5];
-            
-            for(int i = 0; i < tileProperties.Count; i++)
-            {
-                SetTileDataAt(tileProperties[i].name, tileProperties[i].tileType);
+                SetTileDataAt(tile);
             }
         }
 
-        public void SetTileDataAt(string name, TileType tileType)
+        void Start()
         {
-            Vector2Int vec2 = ParseCoordinatesFromName(name);
-            if (vec2.x >= 0 && vec2.x < tileTypes.GetLength(0) && vec2.y >= 0 && vec2.y < tileTypes.GetLength(1))
+            SpanwPlayer();
+        }
+
+        public void SetTileDataAt(TileProperty tileProperty)
+        {
+            Vector2Int vec2 = ParseCoordinatesFromName(tileProperty.name);
+            if (vec2.x >= 0 && vec2.x < tileProperties.GetLength(0) && vec2.y >= 0 && vec2.y < tileProperties.GetLength(1))
             {
-                tileTypes[vec2.x, vec2.y] = tileType;
+                tileProperties[vec2.x, vec2.y] = tileProperty;
             }
             else
             {
                 Debug.LogWarning($"타일 좌표 ({vec2.x}, {vec2.y})가 배열의 범위를 벗어났습니다.");
             }
+        }
 
+        public TileProperty GetTileDataAt(int x, int y)
+        {
+            return tileProperties[x, y];
         }
 
         void SpanwPlayer()
         {
-            Instantiate(player);
+            activityPlayer = Instantiate(playerPrefab);
+
+            activityPlayer.transform.SetParent(mapParent.transform, false);
+
+            PlayerMoveMent(Random.Range(0,height), 0);
         }
 
         public void PlayerMoveMent(int x, int y)
         {
-            
+            activityPlayer.transform.localPosition = GetTileDataAt(x,y).transform.localPosition;
+
+            Debug.Log($"player position is {activityPlayer.transform.localPosition}");
+
+            Debug.Log($"player is {x}, {y}");
         }
 
         Vector2Int ParseCoordinatesFromName(string name)

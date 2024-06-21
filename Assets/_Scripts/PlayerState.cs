@@ -7,7 +7,7 @@ namespace Rog_Card
     public class PlayerState : MonoBehaviour
     {
         MapManager mapManager;
-
+        
         void Awake ()
         {
             mapManager = FindObjectOfType<MapManager>();
@@ -20,9 +20,7 @@ namespace Rog_Card
 
         void Update()
         {
-            float moveX = Input.GetAxis("Horizontal");
-            float moveZ = Input.GetAxis("Vertical");
-            
+
         }
     }
 }
