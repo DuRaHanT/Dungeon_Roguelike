@@ -2,6 +2,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using System;
 using Random = UnityEngine.Random;
+using System.Collections.Generic;
 
 namespace Rog_Card
 {
@@ -10,9 +11,11 @@ namespace Rog_Card
         public event EventHandler<PlayerMoveEventArgs> OnPlayerMovementEvent;
 
         public GameObject playerPrefab;
+        public GameObject enemyPrefab;
         public GameObject mapParent;
         public TileProperty[,] tileProperties;
         GameObject activityPlayer;
+        List<GameObject> activityEnemy;
 
         int width = 5, height = 4;
 
@@ -105,6 +108,19 @@ namespace Rog_Card
             int y = int.Parse(parts[1]);
 
             return new Vector2Int(x, y);
+        }
+
+        void DamgeAble(int rangeX, int rangeY, int attack, GameObject target)
+        {
+            int x = Mathf.Clamp(rangeX, 0, width);
+            int y = Mathf.Clamp(rangeY, 0, height);
+
+            var obj = target.GetComponent<IAbility>();
+
+            if(obj.currentX == x && obj.currentY == y) obj.health -= attack;
+
+            Debug.Log($"position {x},{y} {target.name} is Damge {attack}");
+            Debug.Log($"{target.name} health is {obj.health}");
         }
     }
 
