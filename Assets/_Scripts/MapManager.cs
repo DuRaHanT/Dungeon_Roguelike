@@ -121,6 +121,19 @@ namespace Rog_Card
 
             Debug.Log($"position {x},{y} {target.name} is Damge {attack}");
             Debug.Log($"{target.name} health is {obj.health}");
+
+            Dead(target);
+        }
+
+        void Dead(GameObject target)
+        {
+            if(target.GetComponent<IAbility>().health <= 0) 
+            {
+                Debug.Log($"{target.name} is Dead");
+                target.SetActive(false);
+            }
+
+            else Debug.Log($"{target.name} is Alive");
         }
     }
 
